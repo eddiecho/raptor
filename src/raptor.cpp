@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
     }
 
     Scanner scan(argv[1]);
+    scan.scanTokens();
     scan.print();
   }
   return 0;

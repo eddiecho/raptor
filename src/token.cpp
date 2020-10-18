@@ -30,7 +30,7 @@ bool32 Scanner::matchChar(char c) {
 
 void Scanner::print() {
   for (Token token : this->tokens) {
-    printf("%s", token.toString());
+    printf("%s\n", token.toString());
   }
 }
 
@@ -110,7 +110,8 @@ Token Scanner::advance() {
 }
 
 void Scanner::scanTokens() {
-  for (auto token = this->advance(); token.type != Lexeme::Eof;) {
+  for (auto token = this->advance(); token.type != Lexeme::Eof;
+       token = this->advance()) {
     this->tokens.push_back(token);
   }
 
