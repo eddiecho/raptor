@@ -7,6 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(SRC ./src/)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ./bin)
 
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+
 add_executable(raptor src/raptor.cpp)
 set_target_properties(raptor PROPERTIES LINKER_LANGUAGE CXX)
 
