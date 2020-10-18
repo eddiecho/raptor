@@ -1,5 +1,3 @@
-#define bool32 u32
-
 #define LEXEMES                                                                \
   X(Literal)                                                                   \
   X(Keyword)                                                                   \
