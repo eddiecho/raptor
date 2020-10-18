@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(raptor VERSION 0.1 LANGUAGES CXX)
+project(Raptor VERSION 0.0.1 LANGUAGES CXX)
+
+set(VERSION "#define Raptor_VERSION_MAJOR ${Raptor_VERSION_MAJOR}
+#define Raptor_VERSION_MINOR ${Raptor_VERSION_MINOR}
+#define Raptor_VERSION_PATCH ${Raptor_VERSION_PATCH}"
+)
+
+file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/raptor_version.h "${VERSION}")
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)

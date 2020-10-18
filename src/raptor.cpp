@@ -12,16 +12,18 @@
 #include "raptor_version.h"
 #include "token.cpp"
 
+void print_version() {
+  std::cout << "Raptor Version " << Raptor_VERSION_MAJOR << "."
+            << Raptor_VERSION_MINOR << "." << Raptor_VERSION_PATCH << std::endl;
+}
+
 int main(int argc, char **argv) {
   if (argc == 1) {
-    std::cout << "Raptor Version " << Raptor_VERSION_MAJOR << "."
-              << Raptor_VERSION_MINOR << std::endl;
+    print_version();
     std::cout << " Usage: " << argv[0] << " [script]" << std::endl;
   } else if (argc == 2) {
     if (std::string(argv[1]) == "--version") {
-      std::cout << "Raptor Version " << Raptor_VERSION_MAJOR << "."
-                << Raptor_VERSION_MINOR << std::endl;
-
+      print_version();
       return 0;
     }
 

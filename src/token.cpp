@@ -25,12 +25,16 @@ bool32 Scanner::matchChar(char c) {
   bool32 result = (this->source.peek() == c);
   this->currCol += result;
 
+  // get and throw away
+  if (result)
+    this->source.get();
+
   return result;
 }
 
 void Scanner::print() {
   for (Token token : this->tokens) {
-    printf("%s\n", token.toString());
+    printf("%s line: %d col: %d\n", token.toString(), token.line, token.column);
   }
 }
 
