@@ -35,12 +35,13 @@ struct Scanner {
   u32 currLine = 1;
   u32 currCol = 1;
 
+  // TODO - does this alloc?
   Scanner(char *filename) { source = std::ifstream(filename); };
 
   void scanTokens();
   void print();
   Token advance();
-  char skipWhitespace(char byte);
+  char skipWhitespace();
   bool32 matchChar(char c);
 };
 

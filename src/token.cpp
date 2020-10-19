@@ -1,5 +1,4 @@
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -43,7 +42,7 @@ enum WhitespaceOptions {
   NewLine = 0x02,
 };
 
-static inline u32 isWhitespace(const char c) {
+internal inline u32 isWhitespace(const char c) {
   u32 result = 0;
 
   result |= (((c == '\n') << 1) & WhitespaceOptions::NewLine);
@@ -57,13 +56,17 @@ static inline u32 isWhitespace(const char c) {
   return result;
 }
 
-char Scanner::skipWhitespace(char byte) {
+char Scanner::skipWhitespace() {
   // no language is truly whitespace invariant... you can't put spaces in
   // the middle of identifiers in whatever language
 
-  // this could be a very expensive branch...
+  char byte = 0;
+  u32 whitespace = 0;
   while (this->source.good()) {
-    u32 whitespace = isWhitespace(byte);
+    byte = this->source.get();
+    whitespace = isWhitespace(byte);
+
+    // this could be a very expensive branch...
     if (whitespace & WhitespaceOptions::NewLine) {
       ++this->currLine;
       this->currCol = 1;
@@ -72,9 +75,6 @@ char Scanner::skipWhitespace(char byte) {
     } else {
       break;
     }
-
-    byte = this->source.get();
-    whitespace = isWhitespace(byte);
   }
 
   return this->source.good() ? byte : 0;
@@ -87,27 +87,24 @@ char Scanner::skipWhitespace(char byte) {
 Token Scanner::advance() {
   Token token = {};
 
-  if (this->source.good()) {
+  char byte = this->skipWhitespace();
 
-    char byte = this->skipWhitespace(this->source.get());
+  // TODO - multichar tokens need to update currCol
+  // probably inside the switch?
+  token.line = this->currLine;
+  token.column = this->currCol++;
 
-    // TODO - multichar tokens need to update currCol
-    // probably inside the switch?
-    token.line = this->currLine;
-    token.column = this->currCol++;
-
-    switch (byte) {
-    case '(': {
-      token.type = Lexeme::LeftParens;
-    } break;
-    case ')': {
-      token.type = Lexeme::RightParens;
-    } break;
-    case '+': {
-      token.type = (this->matchChar('+')) ? Lexeme::Increment : Lexeme::Add;
-    } break;
-    default: { token.type = Lexeme::Eof; } break;
-    }
+  switch (byte) {
+  case '(': {
+    token.type = Lexeme::LeftParens;
+  } break;
+  case ')': {
+    token.type = Lexeme::RightParens;
+  } break;
+  case '+': {
+    token.type = (this->matchChar('+')) ? Lexeme::Increment : Lexeme::Add;
+  } break;
+  default: { token.type = Lexeme::Eof; } break;
   }
 
   return token;
@@ -120,5 +117,6 @@ void Scanner::scanTokens() {
   }
 
   // TODO - do i actually need an EOF token in the stream?
+  // TODO - imports!, probably need to do some other EOF shenanigans
 }
 

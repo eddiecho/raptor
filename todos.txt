@@ -1,0 +1,8 @@
+- Remove std dependencies
+    currently using:
+        iostream
+        vector
+        string
+
+    does printf() count?
+    probably need to use chrono also

@@ -1,25 +1,19 @@
 #include <iostream>
-#include <string>
+#include <string.h>
 
-#define u32 uint32_t
-#define s32 int32_t
-#define u64 uint64_t
-#define s64 int64_t
-#define f32 float
-#define f64 double
-
-#define bool32 u32
+#include "raptor.h"
 
 #include "raptor_out.cpp"
 #include "raptor_version.h"
 #include "token.cpp"
 
-void print_version() {
+internal inline void print_version() {
   printf("Raptor version %d.%d.%d\n", Raptor_VERSION_MAJOR,
          Raptor_VERSION_MINOR, Raptor_VERSION_PATCH);
 }
 
 int main(int argc, char **argv) {
+  // TODO - repl
   if (argc == 1) {
     print_version();
     printf("  Usage: %s [script]\n", argv[0]);
@@ -27,7 +21,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  if (std::string(argv[1]) == "--version") {
+  if (strcmp(argv[1], "--version") == 0) {
     print_version();
     return 0;
   }
