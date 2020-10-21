@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "raptor.h"
+#include "result.h"
 
 #include "raptor_out.cpp"
 #include "raptor_version.h"

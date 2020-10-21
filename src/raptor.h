@@ -4,11 +4,14 @@
 #define printerr(args...) fprintf(stderr, ##args)
 #endif
 
+#define panic(message)                                                         \
+  printerr("%s\n", message);                                                   \
+  *(int *)0 = 0;
+
 #ifdef DEBUG
 #define assert(condition, message)                                             \
   if (!(condition)) {                                                          \
-    printerr("%s\n", message);                                                 \
-    *(int *)0 = 0;                                                             \
+    panic(message)                                                             \
   }
 #else
 #define assert(condition)
