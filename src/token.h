@@ -1,5 +1,5 @@
 #define LEXEMES                                                                \
-  X(Literal)                                                                   \
+  X(String)                                                                    \
   X(Keyword)                                                                   \
   X(Eof)                                                                       \
   X(LeftParens)                                                                \
@@ -7,12 +7,19 @@
   X(Assign)                                                                    \
   X(Equality)                                                                  \
   X(Increment)                                                                 \
-  X(Add)
+  X(Comment)                                                                   \
+  X(Add)                                                                       \
+  X(Divide)
 
 enum class Lexeme {
 #define X(value) value,
   LEXEMES
 #undef X
+};
+
+struct String {
+  char *value;
+  u32 length;
 };
 
 struct Token {
@@ -22,9 +29,12 @@ struct Token {
   union {
     s64 integer;
     f64 floating;
+    String string;
   };
 
+  void print();
   const char *toString();
+  const char *valueToString();
 };
 
 // TODO - strings of errors
@@ -43,5 +53,7 @@ struct Scanner {
   Token advance();
   char skipWhitespace();
   bool32 matchChar(char c);
+  void findNext(char c);
+  String matchString();
 };
 

@@ -15,9 +15,19 @@ const char *toStringLexeme(Lexeme value) {
   return "Unknown";
 }
 
-const char *Token::toString() {
+void Token::print() {
   Lexeme lex = this->type;
-  return toStringLexeme(lex);
+
+  char *value = " ";
+  switch (lex) {
+  case Lexeme::String: {
+    value = this->string.value;
+  } break;
+  default:
+    break;
+  }
+
+  printf("%s %s", toStringLexeme(lex), value);
 }
 
 bool32 Scanner::matchChar(char c) {
@@ -33,7 +43,8 @@ bool32 Scanner::matchChar(char c) {
 
 void Scanner::print() {
   for (Token token : this->tokens) {
-    printf("%s line: %d col: %d\n", token.toString(), token.line, token.column);
+    token.print();
+    printf(" line: %d col: %d\n", token.line, token.column);
   }
 }
 
@@ -80,6 +91,41 @@ char Scanner::skipWhitespace() {
   return this->source.good() ? byte : 0;
 }
 
+void Scanner::findNext(char c) {
+  // whatever, if the file is over then we done
+  while (this->source.good()) {
+    if (c == this->source.get()) {
+      ++this->currCol;
+      return;
+    }
+  }
+}
+
+// TODO - this going to be hard to remove....
+String Scanner::matchString() {
+  std::vector<char> value;
+  while (this->source.good()) {
+    char byte = this->source.get();
+    ++this->currCol;
+    if (byte == '\"') {
+      break;
+    } else if (byte == '\n') {
+      ++this->currLine;
+      this->currCol = 0;
+      }
+
+    value.push_back(byte);
+  }
+  value.push_back(0);
+
+  String ret = {};
+  // TODO - how do i do this without malloc and copy?????
+  ret.value = (char *)malloc(sizeof(value.data()));
+  strcpy(ret.value, value.data());
+  ret.length = value.size();
+  return ret;
+}
+
 // FIXME - utf8 is supposed to guarantee that no char is a prefix of
 // another... so that should mean that as long as control chars are ascii,
 // this should just work?
@@ -87,6 +133,7 @@ char Scanner::skipWhitespace() {
 Token Scanner::advance() {
   Token token = {};
 
+  // TODO - should i just inline this?
   char byte = this->skipWhitespace();
 
   // TODO - multichar tokens need to update currCol
@@ -103,6 +150,25 @@ Token Scanner::advance() {
   } break;
   case '+': {
     token.type = (this->matchChar('+')) ? Lexeme::Increment : Lexeme::Add;
+  } break;
+  case '/': {
+    // single line comment
+    if (this->matchChar('/')) {
+      token.type = Lexeme::Comment;
+      this->findNext('\n');
+    } else if (this->matchChar('*')) {
+      // multi line comment
+      token.type = Lexeme::Comment;
+      do {
+        this->findNext('*');
+      } while (!this->matchChar('/'));
+    } else {
+      token.type = Lexeme::Divide;
+    }
+  } break;
+  case '\"': {
+    token.type = Lexeme::String;
+    token.string = this->matchString();
   } break;
   default: { token.type = Lexeme::Eof; } break;
   }
