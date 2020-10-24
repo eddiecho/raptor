@@ -18,10 +18,10 @@ const char *toStringLexeme(Lexeme value) {
 void Token::print() {
   Lexeme lex = this->type;
 
-  char *value = " ";
+  char *value = 0;
   switch (lex) {
   case Lexeme::String: {
-    value = this->string.value;
+    value = this->string->value;
   } break;
   default:
     break;
@@ -94,20 +94,26 @@ char Scanner::skipWhitespace() {
 void Scanner::findNext(char c) {
   // whatever, if the file is over then we done
   while (this->source.good()) {
-    if (c == this->source.get()) {
-      ++this->currCol;
+    char byte = this->source.get();
+    ++this->currCol;
+    if (byte == '\n') {
+      ++this->currLine;
+      this->currCol = 0;
+    }
+
+    if (c == byte) {
       return;
     }
   }
 }
 
-// TODO - this going to be hard to remove....
-String Scanner::matchString() {
+// TODO - this vector usage is going to be hard to remove....
+String *Scanner::matchString(char delimit) {
   std::vector<char> value;
   while (this->source.good()) {
     char byte = this->source.get();
     ++this->currCol;
-    if (byte == '\"') {
+    if (byte == delimit) {
       break;
     } else if (byte == '\n') {
       ++this->currLine;
@@ -118,11 +124,10 @@ String Scanner::matchString() {
   }
   value.push_back(0);
 
-  String ret = {};
-  // TODO - how do i do this without malloc and copy?????
-  ret.value = (char *)malloc(sizeof(value.data()));
-  strcpy(ret.value, value.data());
-  ret.length = value.size();
+  // i guess we're doing this....
+  // TODO - learn more cpp so i dont need constructors
+  String *ret = new String(value.data(), value.size());
+
   return ret;
 }
 
@@ -168,7 +173,11 @@ Token Scanner::advance() {
   } break;
   case '\"': {
     token.type = Lexeme::String;
-    token.string = this->matchString();
+    token.string = this->matchString('\"');
+  } break;
+  case '\'': {
+    token.type = Lexeme::String;
+    token.string = this->matchString('\'');
   } break;
   default: { token.type = Lexeme::Eof; } break;
   }

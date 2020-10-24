@@ -17,11 +17,6 @@ enum class Lexeme {
 #undef X
 };
 
-struct String {
-  char *value;
-  u32 length;
-};
-
 struct Token {
   Lexeme type;
   u32 line;
@@ -29,12 +24,10 @@ struct Token {
   union {
     s64 integer;
     f64 floating;
-    String string;
+    const String *string;
   };
 
   void print();
-  const char *toString();
-  const char *valueToString();
 };
 
 // TODO - strings of errors
@@ -54,6 +47,6 @@ struct Scanner {
   char skipWhitespace();
   bool32 matchChar(char c);
   void findNext(char c);
-  String matchString();
+  String *matchString(char delimit);
 };
 
