@@ -11,23 +11,31 @@ const char *toStringLexeme(Lexeme value) {
     return #lexeme;
     LEXEMES
 #undef X
+#define X(lexeme)                                                              \
+  case Lexeme::lexeme:                                                         \
+    return #lexeme;
+    KEYWORDS
+#undef X
   }
   return "Unknown";
 }
 
+// whatever, this is only for debug code....
+// unless? we expose AST stuff?
 void Token::print() {
   Lexeme lex = this->type;
+  printf("%s ", toStringLexeme(lex));
 
-  char *value = 0;
   switch (lex) {
   case Lexeme::String: {
-    value = this->string->value;
+    printf("%s", this->string->value);
+  } break;
+  case Lexeme::Integer: {
+    printf("%ld", this->integer);
   } break;
   default:
     break;
   }
-
-  printf("%s %s", toStringLexeme(lex), value);
 }
 
 bool32 Scanner::matchChar(char c) {
@@ -65,6 +73,17 @@ internal inline u32 isWhitespace(const char c) {
   result |= ((c == '\r') & WhitespaceOptions::General);
 
   return result;
+}
+
+internal inline bool32 isDigit(const char c) { return c >= '0' && c <= '9'; }
+
+// i dont like kebab-case
+internal inline bool32 isAlpha(const char c) {
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '_');
+}
+
+internal inline bool32 isAlphanumeric(const char c) {
+  return isAlpha(c) || isDigit(c);
 }
 
 char Scanner::skipWhitespace() {
@@ -154,6 +173,36 @@ String *Scanner::matchString(const char delimit) {
   return ret;
 }
 
+u64 Scanner::matchNumber(char start) {
+  std::vector<char> value;
+  char next = this->source.peek();
+  s32 radix = 10;
+  if (start == '0') {
+    if (next == 'x') {
+      radix = 16;
+      this->source.get();
+    } else if (next == 'b') {
+      radix = 2;
+      this->source.get();
+    }
+  }
+
+  value.push_back(start);
+
+  while (this->source.good()) {
+    if (isDigit(this->source.peek())) {
+      value.push_back(this->source.get());
+      ++this->currCol;
+    } else {
+      break;
+    }
+  }
+
+  value.push_back(0);
+
+  return strtol(value.data(), 0, radix);
+}
+
 // FIXME - utf8 is supposed to guarantee that no char is a prefix of
 // another... so that should mean that as long as control chars are ascii,
 // this should just work?
@@ -202,7 +251,17 @@ Token Scanner::advance() {
     token.type = Lexeme::String;
     token.string = this->matchString('\'');
   } break;
-  default: { token.type = Lexeme::Eof; } break;
+  default: {
+    // identifiers cannot start with a digit
+    if (isDigit(byte)) {
+      token.type = Lexeme::Integer;
+      token.integer = this->matchNumber(byte);
+    } else if (isAlpha(byte)) {
+      token.type = Lexeme::Identifier;
+    } else {
+      token.type = Lexeme::Eof;
+    }
+  } break;
   }
 
   return token;
