@@ -108,20 +108,43 @@ void Scanner::findNext(char c) {
 }
 
 // TODO - this vector usage is going to be hard to remove....
-String *Scanner::matchString(char delimit) {
+// TODO - escaping characters!
+// TODO - no escape string concat?
+String *Scanner::matchString(const char delimit) {
   std::vector<char> value;
+
   while (this->source.good()) {
     char byte = this->source.get();
     ++this->currCol;
+
     if (byte == delimit) {
       break;
     } else if (byte == '\n') {
       ++this->currLine;
       this->currCol = 0;
+    } else if (byte == '\\') {
+      char escape = this->source.get();
+
+      // which control chars do we handle??
+      // TODO - do i need carriage return?
+      switch (escape) {
+      case 'n': {
+        ++this->currLine;
+        this->currCol = 0;
+        byte = '\n';
+      } break;
+      case 't': {
+        byte = '\t';
+      } break;
+      default: {
+        byte = escape;
+      } break;
       }
+    }
 
     value.push_back(byte);
   }
+
   value.push_back(0);
 
   // i guess we're doing this....
