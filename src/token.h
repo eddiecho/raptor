@@ -46,6 +46,7 @@ struct Token {
 
 // TODO - strings of errors
 // TODO - need to even define error structs for decent UI
+// TODO - just make this a class, all these public methods are monkaS
 struct Scanner {
   std::ifstream source;
   std::vector<Token> tokens;
@@ -63,6 +64,10 @@ struct Scanner {
   bool32 matchChar(char c);
   void findNext(char c);
   String *matchString(char delimit);
-  u64 matchNumber(char start);
+  f64 matchDecimal();
+
+  void matchNumeric(Token *token, char start);
+  u64 hex2bit();
+  u64 bin2bit();
 };
 

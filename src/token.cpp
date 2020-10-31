@@ -33,6 +33,9 @@ void Token::print() {
   case Lexeme::Integer: {
     printf("%ld", this->integer);
   } break;
+  case Lexeme::Floating: {
+    printf("%f", this->floating);
+  } break;
   default:
     break;
   }
@@ -173,34 +176,100 @@ String *Scanner::matchString(const char delimit) {
   return ret;
 }
 
-u64 Scanner::matchNumber(char start) {
-  std::vector<char> value;
-  char next = this->source.peek();
-  s32 radix = 10;
-  if (start == '0') {
-    if (next == 'x') {
-      radix = 16;
-      this->source.get();
-    } else if (next == 'b') {
-      radix = 2;
-      this->source.get();
-    }
-  }
-
-  value.push_back(start);
-
+u64 Scanner::hex2bit() {
+  u64 result = 0;
   while (this->source.good()) {
-    if (isDigit(this->source.peek())) {
-      value.push_back(this->source.get());
+    char next = this->source.peek();
+    if (isDigit(next)) {
+      result <<= 4;
+      result |= (this->source.get() - '0');
+      ++this->currCol;
+    } else if (next >= 'a' && next <= 'f') {
+      result <<= 4;
+      result |= (this->source.get() - 'a' + 10);
+      ++this->currCol;
+    } else if (next >= 'A' && next <= 'F') {
+      result <<= 4;
+      result |= (this->source.get() - 'A' + 10);
       ++this->currCol;
     } else {
       break;
     }
   }
 
+  return result;
+}
+
+u64 Scanner::bin2bit() {
+  u64 result = 0;
+  while (this->source.good()) {
+    char next = this->source.peek();
+    if (next == '0' || next == '1') {
+      result <<= 1;
+      result |= (this->source.get() - '0');
+      ++this->currCol;
+    } else {
+      break;
+    }
+  }
+
+  return result;
+}
+
+void Scanner::matchNumeric(Token *token, char start) {
+  std::vector<char> value;
+  char next = this->source.peek();
+
+  // FIXME - hex or bin strings only return integers for now, fuck it
+  if (start == '0') {
+    if (next == 'x') {
+      this->source.get();
+      token->type = Lexeme::Integer;
+      token->integer = this->hex2bit();
+      return;
+    } else if (next == 'b') {
+      this->source.get();
+      token->type = Lexeme::Integer;
+      token->integer = this->bin2bit();
+      return;
+    }
+  }
+
+  value.push_back(start);
+
+  bool32 isFloat = 0;
+  while (this->source.good()) {
+    if (isDigit(this->source.peek())) {
+      value.push_back(this->source.get());
+      ++this->currCol;
+    } else if (this->source.peek() == '.') {
+      isFloat = 1;
+      value.push_back(this->source.get());
+      ++this->currCol;
+    } else if (this->source.peek() == '_') {
+      ++this->currCol;
+      this->source.get();
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  if (this->source.peek() == 'f') {
+    isFloat = 1;
+    ++this->currCol;
+    this->source.get();
+  }
+
   value.push_back(0);
 
-  return strtol(value.data(), 0, radix);
+  if (isFloat) {
+    token->type = Lexeme::Floating;
+    token->floating = strtod(value.data(), 0);
+  } else {
+    token->type = Lexeme::Integer;
+    token->integer = strtol(value.data(), 0, 10);
+  }
 }
 
 // FIXME - utf8 is supposed to guarantee that no char is a prefix of
@@ -254,8 +323,7 @@ Token Scanner::advance() {
   default: {
     // identifiers cannot start with a digit
     if (isDigit(byte)) {
-      token.type = Lexeme::Integer;
-      token.integer = this->matchNumber(byte);
+      this->matchNumeric(&token, byte);
     } else if (isAlpha(byte)) {
       token.type = Lexeme::Identifier;
     } else {
