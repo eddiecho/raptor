@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 #include "token.h"
@@ -35,6 +36,9 @@ void Token::print() {
   } break;
   case Lexeme::Floating: {
     printf("%f", this->floating);
+  } break;
+  case Lexeme::Identifier: {
+    printf("%s", this->identifier->value);
   } break;
   default:
     break;
@@ -171,11 +175,64 @@ String *Scanner::matchString(const char delimit) {
 
   // i guess we're doing this....
   // TODO - learn more cpp so i dont need constructors
-  String *ret = new String(value.data(), value.size());
+  // maybe intern them all in an arena?
+  String *ret = new String(value.data(), value.size() - 1);
 
   return ret;
 }
 
+struct KeywordHash {
+  std::size_t operator()(const char *k) const {
+    std::size_t hash = 5381;
+
+    while (*k)
+      hash = ((hash << 5) + hash) + (*k++);
+
+    return hash;
+  }
+};
+
+struct KeywordEqual {
+  bool operator()(const char *a, const char *b) const {
+    return strcmp(a, b) == 0;
+  }
+};
+
+// TODO - there has to be a better way to do this
+global const std::unordered_map<const char *, Lexeme, KeywordHash, KeywordEqual>
+    keywords = {
+        {"func", Lexeme::Function}, {"if", Lexeme::If},
+        {"else", Lexeme::Else},     {"for", Lexeme::For},
+        {"while", Lexeme::While},   {"return", Lexeme::Return},
+        {"true", Lexeme::True},     {"false", Lexeme::False},
+        {"var", Lexeme::Var},
+};
+
+void Scanner::matchIdentifier(Token *token, char start) {
+  std::vector<char> value;
+
+  value.push_back(start);
+  while (this->source.good()) {
+    if (isAlphanumeric(this->source.peek())) {
+      value.push_back(this->source.get());
+      ++this->currCol;
+    } else {
+      break;
+    }
+  }
+  value.push_back(0);
+
+  assert(value.size() > 1, "identifier must not be empty");
+  auto lexeme = keywords.find(value.data());
+  if (lexeme != keywords.end()) {
+    token->type = lexeme->second;
+  } else {
+    token->type = Lexeme::Identifier;
+    token->identifier = new String(value.data(), value.size() - 1);
+  }
+}
+
+// TODO - THIS DOESN'T WORK FOR ALL ENDIANS (probably)
 u64 Scanner::hex2bit() {
   u64 result = 0;
   while (this->source.good()) {
@@ -200,6 +257,7 @@ u64 Scanner::hex2bit() {
   return result;
 }
 
+// TODO - THIS DOESN'T WORK FOR ALL ENDIANS
 u64 Scanner::bin2bit() {
   u64 result = 0;
   while (this->source.good()) {
@@ -220,7 +278,8 @@ void Scanner::matchNumeric(Token *token, char start) {
   std::vector<char> value;
   char next = this->source.peek();
 
-  // FIXME - hex or bin strings only return integers for now, fuck it
+  // TODO - hex or bin strings only return integers for now, fuck it
+  // TODO - octal at some point?
   if (start == '0') {
     if (next == 'x') {
       this->source.get();
@@ -282,8 +341,6 @@ Token Scanner::advance() {
   // TODO - should i just inline this?
   char byte = this->skipWhitespace();
 
-  // TODO - multichar tokens need to update currCol
-  // probably inside the switch?
   token.line = this->currLine;
   token.column = this->currCol++;
 
@@ -304,6 +361,7 @@ Token Scanner::advance() {
       this->findNext('\n');
     } else if (this->matchChar('*')) {
       // multi line comment
+      // TODO - this doesn't work with nested comments
       token.type = Lexeme::Comment;
       do {
         this->findNext('*');
@@ -325,7 +383,7 @@ Token Scanner::advance() {
     if (isDigit(byte)) {
       this->matchNumeric(&token, byte);
     } else if (isAlpha(byte)) {
-      token.type = Lexeme::Identifier;
+      this->matchIdentifier(&token, byte);
     } else {
       token.type = Lexeme::Eof;
     }

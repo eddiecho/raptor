@@ -16,11 +16,15 @@
   X(Divide)
 
 #define KEYWORDS                                                               \
-  X(And)                                                                       \
-  X(Or)                                                                        \
   X(Function)                                                                  \
   X(If)                                                                        \
-  X(Else)
+  X(Else)                                                                      \
+  X(For)                                                                       \
+  X(While)                                                                     \
+  X(Return)                                                                    \
+  X(Var)                                                                       \
+  X(True)                                                                      \
+  X(False)
 
 enum class Lexeme {
 #define X(value) value,
@@ -39,6 +43,7 @@ struct Token {
     u64 integer;
     f64 floating;
     const String *string;
+    const String *identifier;
   };
 
   void print();
@@ -65,6 +70,7 @@ struct Scanner {
   void findNext(char c);
   String *matchString(char delimit);
   f64 matchDecimal();
+  void matchIdentifier(Token *token, char start);
 
   void matchNumeric(Token *token, char start);
   u64 hex2bit();

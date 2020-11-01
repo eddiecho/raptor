@@ -14,7 +14,7 @@
     panic(message)                                                             \
   }
 #else
-#define assert(condition)
+#define assert(condition, message)
 #endif
 
 #define internal static
