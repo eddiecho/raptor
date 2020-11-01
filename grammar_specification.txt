@@ -1,0 +1,17 @@
+literal               -> NUMBER | STRING | "true" | "false"
+
+# all expressions are falsible, not all are negatable, depends on the type
+# TODO - add increment/decrement?
+unary_operator        -> "-" | "!"
+unary                 -> unary_operator expression
+
+# TODO - is reference operator binary?
+binary_operator       -> "==" | "!=" | "<" | ">" | ">=" | "<=" | "+" | "-" | "*" | "/" | "%"
+binary                -> expression binary_operator expression
+
+grouping              -> "(" expression ")"
+
+expression            -> literal
+                       | unary
+                       | binary
+                       | grouping
